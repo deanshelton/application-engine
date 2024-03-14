@@ -9,7 +9,7 @@ components feeding outputs into inputs, and allowing for basic flow control.
 1. start dynamo locally `docker-compose up`
 2. run the test suite 
 ``` 
-AWS_PROFILE=default AWS_DEFAULT_REGION=us-west-2 DYNAMO_ENDPOINT=http://localhost:8000 APP_ENV=local APP_NAME=test npm run test
+DYNAMO_ENDPOINT=http://localhost:8000 APP_ENV=local APP_NAME=test npm run test
 ```
 
 ## <a name="Application"></a> Application
