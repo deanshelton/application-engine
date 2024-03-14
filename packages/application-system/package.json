@@ -1,5 +1,5 @@
 {
-  "name": "@repo/logger",
+  "name": "@repo/application-system",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -17,6 +17,11 @@
   "jest": {
     "preset": "@repo/jest-presets/jest/node"
   },
+  "dependencies": {
+    "@repo/logger": "*",
+    "@repo/timer": "*",
+    "@repo/database": "*"
+  },
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/jest-presets": "*",
@@ -26,10 +31,5 @@
     "jest": "^29.7.0",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
-  },
-  "dependencies": {
-    "colors": "^1.4.0",
-    "loglevel": "^1.9.1",
-    "loglevel-plugin-prefix": "^0.8.4"
   }
 }

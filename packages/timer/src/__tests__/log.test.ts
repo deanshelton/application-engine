@@ -1,4 +1,4 @@
-import { getLogger } from "..";
+import { getLogger } from "@repo/logger";
 
 jest.spyOn(global.console, "log");
 

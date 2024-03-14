@@ -1,39 +1,93 @@
-# Turborepo kitchen sink starter
+# Application System
 
-This is an official starter Turborepo with multiple meta-frameworks all working in harmony and sharing packages.
+The application system allows for JSON to specify the composition of logical
+components feeding outputs into inputs, and allowing for basic flow control.
 
-This example also shows how to use [Workspace Configurations](https://turbo.build/repo/docs/core-concepts/monorepos/configuring-workspaces).
+## <a name="Application"></a> Application
 
-## Using this example
+The broadest concept of an the application system is the un-ironically named
+[Application](#Application) object. This object instance holds a linked-list of [Actions](#Action) which it will execute in sequence defined in an [ApplicationConfiguration JSON document](#ApplicationConfiguration).
 
-Run the following command:
+Applications have a single public method `run()` which will first instantiate all [Action](#Action) objects defined in the [ApplicationConfiguration](#ApplicationConfiguration) as a lined list, then traverse the list executing the `invoke` method with the `input` specified in the `<action>.config.inputSources`.
 
-```sh
-npx create-turbo@latest -e kitchen-sink
+<center><img src="./assets/application-anatomy.png"></center>
+
+## <a name="globals"></a> Globals
+
+While each [Action](#action) has it's own memory space, there are a read-only set of globals, which are accessible from within any action via `this.globals.<whatever>`. These may be accessed at any time.
+
+## <a name="action"></a> Actions
+
+All actions are subclasses of the `Action` class.
+
+
+<center><img src="./assets/action-anatomy.png"></center>
+
+---
+
+
+### <a name="ApplicationConfiguration"></a> ApplicationConfiguration JSON
+
+The `applicationConfiguration` must follow a rigid nested/recursive structure and is the same for all [Actions](#action).
+Each Application must have the following root-level keys:
+
+```json
+{
+  "type": "MyActionType",
+  "config": {
+    "actionId": "uniqueVal",
+    ...
+  },
+  "inputSources": {
+    "whatever": "GLOBAL:accountId",
+  },
+  "onSuccess": {
+    ...
+  }
+}
+
 ```
 
-## What's inside?
+| key                 | required | type   | description                                                                                                                 |
+| ------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| type                | true     | string | This value maps to the action types |
+| config              | true     | string | The config object specific to the `type`. See [Action](#action) documentation for details.                                  |
+| config.actionId     | true     | string | The unique name of this action within this application.                                                                     |
+| config.inputSources | false    | object | An Object, keyed by a desired input param name, and valued by a string. See [InputSources](#input-sources) for more details |
+| onSuccess           | false    | object | An ApplicationConfiguration to run if/after this action fails                                                               |
+| hooks               | false    | object | Some applications may offer custom behavior midway thru execution. See Action documentation for details.                    |
 
-This Turborepo includes the following packages and apps:
+## Input Sources
 
-### Apps and Packages
+Each Action has it's own output which may be referenced from `inputSources`.
 
-- `api`: an [Express](https://expressjs.com/) server
-- `storefront`: a [Next.js](https://nextjs.org/) app
-- `admin`: a [Vite](https://vitejs.dev/) single page app
-- `blog`: a [Remix](https://remix.run/) blog
-- `@repo/logger`: isomorphic logger (a small wrapper around console.log)
-- `@repo/ui`: a dummy React UI library (which contains a single `<CounterButton>` component)
-- `scripts`: Jest and ESLint configurations
-- `@repo/typescript-config`: tsconfig.json's used throughout the monorepo
+To reference the output of one action as the input to another, simply link them with the `config.inputSources` object.
 
-Each package and app is 100% [TypeScript](https://www.typescriptlang.org/).
+Here is an example:
 
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Jest](https://jestjs.io) test runner for all things JavaScript
-- [Prettier](https://prettier.io) for code formatting
+```json
+// Example Bulk Check-In ApplicationConfig
+// Note the inputSources sections which link memory address' for runtime hydration.
+{
+  "type": "BulkCheckIn",
+  "config": {
+    "actionId": "root",
+    "streakInterval": 86400000,
+    "rewardEachCheckIn": true
+  },
+  "inputSources": {
+    "accountId": "GLOBAL:accountId",
+    "claimedAddresses": "GLOBAL:claimedAddresses"
+  },
+  "onSuccess": {
+    "type": "Mint",
+    "config": {
+      "actionId": "mint",
+      "inputSources": {
+        "walletAddress": "GLOBAL:walletAddress",
+        "nftIdsAndQuantities": "GET:root:nftIdsAndQuantities" // <-- output of root, as input to mint
+      }
+    }
+  }
+}
+```

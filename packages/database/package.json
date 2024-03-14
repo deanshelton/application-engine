@@ -1,5 +1,5 @@
 {
-  "name": "@repo/logger",
+  "name": "@repo/database",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -18,6 +18,7 @@
     "preset": "@repo/jest-presets/jest/node"
   },
   "devDependencies": {
+    "@repo/logger": "*",
     "@repo/eslint-config": "*",
     "@repo/jest-presets": "*",
     "@repo/typescript-config": "*",
@@ -28,8 +29,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "colors": "^1.4.0",
-    "loglevel": "^1.9.1",
-    "loglevel-plugin-prefix": "^0.8.4"
+    "@paralleldrive/cuid2": "2.2.0",
+    "dynamoose": "4.0.0",
+    "zod": "3.20.6"
   }
 }
