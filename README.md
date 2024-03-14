@@ -3,6 +3,15 @@
 The application system allows for JSON to specify the composition of logical
 components feeding outputs into inputs, and allowing for basic flow control.
 
+
+## getting started
+
+1. start dynamo locally `docker-compose up`
+2. run the test suite 
+``` 
+AWS_PROFILE=default AWS_DEFAULT_REGION=us-west-2 DYNAMO_ENDPOINT=http://localhost:8000 APP_ENV=local APP_NAME=test npm run test
+```
+
 ## <a name="Application"></a> Application
 
 The broadest concept of an the application system is the un-ironically named
