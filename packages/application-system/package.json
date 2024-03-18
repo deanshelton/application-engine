@@ -15,7 +15,8 @@
     "test": "jest"
   },
   "jest": {
-    "preset": "@repo/jest-presets/jest/node"
+    "preset": "@repo/jest-presets/jest/node",
+    "globalSetup": "<rootDir>/src/test-setup.ts"
   },
   "dependencies": {
     "@repo/database": "*",

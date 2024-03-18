@@ -129,7 +129,6 @@ export class Application<G extends ApplicationGlobals> {
       // We only want to surface MISCONFIGURATION issues. Otherwise we continue with onFailure flow.
       if ((e as FailureByDesign).kind === "MISCONFIGURATION") throw e;
       await linkedListItem.action.setOutput({ error: e });
-      this.logger.error(e);
       // Oh no! Something went wrong while traversing the action items.
       // If there is an onFailure action, we set the pointer and recurse,
       // Otherwise we raise the error.

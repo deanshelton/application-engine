@@ -13,15 +13,10 @@ import { VerifyPayloadConfiguration } from "../models/actions/VerifyPayload";
 const logger = getLogger({ level: "silent" });
 
 describe("ApplicationSystem", () => {
-  beforeAll(async () => {
-    let items = await ApplicationState.scan().exec();
-    await Promise.all(items.map((item) => item.delete()));
-  });
-
   it("Calls OnFailure input is invalid JSON schema", async () => {
     const globals = {
-      application: { id: cuid() },
-      user: { id: "fakeUserId" },
+      application: { id: 'fakeAppId' },
+      user: { id: "fakeUserId"+cuid() },
       logger,
     };
     const dataAccess = new DataAccess({
@@ -78,8 +73,8 @@ describe("ApplicationSystem", () => {
   });
   it("calls onFailure with BAD_REQUEST when JSON in not valid.", async () => {
     const globals = {
-      application: { id: "fakeAppId" },
-      user: { id: "fakeUserId" },
+      application: { id: 'fakeAppId' },
+      user: { id: "fakeUserId"+cuid() },
       logger,
     };
     const dataAccess = new DataAccess({
@@ -98,7 +93,6 @@ describe("ApplicationSystem", () => {
           type: "object",
           properties: {
             foo: { type: "integer" },
-            bar: { type: "string" },
           },
           required: ["foo"],
           additionalProperties: false,

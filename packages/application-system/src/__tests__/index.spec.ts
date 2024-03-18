@@ -5,22 +5,17 @@ import { ActionMap, ActionType } from "../models/ActionMap";
 import { DataAccess } from "../models/DataAccess";
 
 import { expect } from "@jest/globals";
-import { ApplicationState } from "@repo/database";
 import { FailureByDesign } from "@repo/failure-by-design";
 import { fail } from "assert";
 import cuid from "cuid";
 
 const logger = getLogger({ level: "silent" });
 describe("ApplicationSystem", () => {
-  beforeAll(async () => {
-    let items = await ApplicationState.scan().exec();
-    await Promise.all(items.map((item) => item.delete()));
-  });
 
   it("Outputs can be used as inputs", async () => {
     const globals = {
-      application: { id: cuid() },
-      user: { id: "fakeUserId" },
+      application: { id: 'fakeAppId' },
+      user: { id: "fakeUserId" + cuid() },
       logger,
     };
     const dataAccess = new DataAccess({
@@ -72,7 +67,7 @@ describe("ApplicationSystem", () => {
   it("Throws MISCONFIGURATION when referencing actions by ID which do not exist.", async () => {
     const globals = {
       application: { id: "fakeAppId" },
-      user: { id: "fakeUserId" },
+      user: { id: "fakeUserId"  + cuid() },
       logger,
     };
     const dataAccess = new DataAccess({
