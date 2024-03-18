@@ -2,7 +2,7 @@
 
 The application system allows for JSON to specify the composition of logical
 components feeding outputs into inputs, and allowing for basic flow control.
-![](../../assets/architecture.png)
+![](./assets/architecture.png)
 
 
 
