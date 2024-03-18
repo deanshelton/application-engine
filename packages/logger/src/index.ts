@@ -9,6 +9,7 @@ interface LoggerConf {
 }
 /* istanbul ignore next */ // Not worth testing a logger.
 export const getLogger = (obj:LoggerConf={} ) => {
+
   const colors = {
     TRACE: color.magenta,
     DEBUG: color.cyan,
@@ -16,7 +17,7 @@ export const getLogger = (obj:LoggerConf={} ) => {
     WARN: color.yellow,
     ERROR: color.red
   };
-  logger.setDefaultLevel('debug');
+  // logger.setDefaultLevel('debug');
   prefix.reg(logger);
   const log = logger.getLogger('App');
   log.setLevel(obj.level || 'WARN');
@@ -27,7 +28,7 @@ export const getLogger = (obj:LoggerConf={} ) => {
     }
   });
 
-  prefix.apply(logger.getLogger('critical'), {
+  prefix.apply(log, {
     format(level, name, timestamp) {
       return color.red.bold(`[${timestamp}] ${level} ${name}:`);
     }

@@ -11,7 +11,6 @@ import cuid from "cuid";
 
 const logger = getLogger({ level: "silent" });
 describe("ApplicationSystem", () => {
-
   it("Outputs can be used as inputs", async () => {
     const globals = {
       application: { id: 'fakeAppId' },
