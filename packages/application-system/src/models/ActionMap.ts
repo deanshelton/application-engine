@@ -3,7 +3,9 @@ import { getLogger, Logger } from '@repo/logger';
 import { TestAction } from './actions/TestAction';
 import { DataAccess } from './DataAccess';
 
+import { FailureByDesign } from '@repo/failure-by-design';
 import type { Action, ActionConfiguration, ActionInput, ActionOutput } from './actions/Action';
+import { VerifyPayload } from './actions/VerifyPayload';
 import type { ApplicationConfiguration, ApplicationGlobals } from './Application';
 export interface LinkedListItem {
   action: Action<ActionConfiguration, ActionInput, ActionOutput>;
@@ -17,10 +19,13 @@ export interface LinkedListItem {
 export enum ActionType {
   // eslint-disable-next-line no-unused-vars
   TEST_ACTION = 'TestAction',
+  // eslint-disable-next-line no-unused-vars
+  VERIFY_PAYLOAD = 'VerifyPayload'
 }
 
 const ActionClass = {
   [ActionType.TEST_ACTION]: TestAction,
+  [ActionType.VERIFY_PAYLOAD]: VerifyPayload,
 };
 
 /**
@@ -87,8 +92,12 @@ export class ActionMap {
     return node;
   }
 
-  public getActionByLinkedListId(linkedListId: string) {
-    return this.map[linkedListId];
+  public getActionByLinkedListId(linkedListId: string): LinkedListItem {
+    const linkedListItem = this.map[linkedListId];
+    if(!linkedListItem) {
+      throw new FailureByDesign('MISCONFIGURATION', `Previous action var lookup failure. flimFlam:someText"`)
+    }
+    return linkedListItem;
   }
 
   public getRootOfLinkedList() {

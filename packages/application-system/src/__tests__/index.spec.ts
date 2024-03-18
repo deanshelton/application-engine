@@ -6,16 +6,20 @@ import { DataAccess } from "../models/DataAccess";
 
 import { expect } from "@jest/globals";
 import { ApplicationState } from "@repo/database";
+import { FailureByDesign } from "@repo/failure-by-design";
+import { fail } from "assert";
+import cuid from "cuid";
+
 const logger = getLogger({ level: "debug" });
 describe("ApplicationSystem", () => {
-  beforeEach(async () => {
+  beforeAll(async () => {
     let items = await ApplicationState.scan().exec();
-
     await Promise.all(items.map((item) => item.delete()));
   });
+
   it("Outputs can be used as inputs", async () => {
     const globals = {
-      application: { id: "fakeAppId" },
+      application: { id: cuid() },
       user: { id: "fakeUserId" },
       logger,
     };
@@ -61,9 +65,68 @@ describe("ApplicationSystem", () => {
     });
 
     const appRunResult = await app.run();
-    const actionTwoHeap = JSON.parse(appRunResult.heap['test-action-2']!)
+    const actionTwoHeap = JSON.parse(appRunResult.heap["test-action-2"]!);
     expect(actionTwoHeap.inputGivenToAction.myInput).toEqual("Hola");
     expect(appRunResult.pointer).toEqual("");
-    expect
+  });
+  it("Throws MISCONFIGURATION when referencing actions by ID which do not exist.", async () => {
+    const globals = {
+      application: { id: "fakeAppId" },
+      user: { id: "fakeUserId" },
+      logger,
+    };
+    const dataAccess = new DataAccess({
+      globals,
+      logger,
+    });
+
+    const validApplicationConf = {
+      type: ActionType.TEST_ACTION,
+      config: {
+        actionId: "act1",
+        inputSources: {},
+      } as TestActionConfiguration,
+      onSuccess: {
+        type: ActionType.TEST_ACTION,
+        config: {
+          actionId: "onSuccess",
+          inputSources: {
+            whatever: "GET:flimFlam:someText",
+          },
+        } as TestActionConfiguration,
+      },
+      onFailure: {
+        type: ActionType.TEST_ACTION,
+        config: {
+          actionId: "flimFlam",
+        } as TestActionConfiguration,
+      },
+    };
+
+    try {
+      const actionMap = new ActionMap({
+        globals,
+        dataAccess,
+        logger,
+      });
+
+      const app = new Application({
+        logger,
+        actionMap,
+        globals,
+        dataAccess,
+        applicationConf: validApplicationConf,
+      });
+      await app.run();
+      fail(
+        "Did not throw error when referencing actions by ID which do not exist."
+      );
+    } catch (e) {
+      const error = e as unknown as FailureByDesign;
+      expect(error.kind).toEqual("MISCONFIGURATION");
+      expect(error.message).toEqual(
+        "Previous action var lookup failure. flimFlam:someText"
+      );
+    }
   });
 });

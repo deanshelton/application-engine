@@ -1,5 +1,6 @@
 import { getLogger, Logger } from "@repo/logger";
 
+import { FailureByDesign } from "@repo/failure-by-design";
 import { timedEvent } from "@repo/timer";
 import type { ActionMap, ActionType } from "./ActionMap";
 import type { ActionConfiguration } from "./actions/Action";
@@ -85,7 +86,7 @@ export class Application<G extends ApplicationGlobals> {
    * - set next-to-be-processed linkedListId for this accountId.
    * - recurse
    */
-  public async run(): Promise<HeapDump> {
+  public async run(props: any = {}): Promise<HeapDump> {
     let linkedListId = await this.dataAccess.getLinkedListPointer();
     if (linkedListId === null || linkedListId == "") {
       this.logger.debug(`Starting at root.`);
@@ -116,7 +117,7 @@ export class Application<G extends ApplicationGlobals> {
       // if there is an onSuccess pointer, we move the current pointer to that and recurse.
       if (linkedListItem.onSuccess) {
         await this.dataAccess.setLinkedListPointer(linkedListItem.onSuccess.id);
-        return await this.run(); // recurse
+        return await this.run(props); // recurse
       } else {
         // We are done with this application run. We need to reset the pointer.
         await this.dataAccess.setLinkedListPointer("");
@@ -125,6 +126,9 @@ export class Application<G extends ApplicationGlobals> {
       // We can safely exit and pull a heap dump to return to the caller.
       return this.dataAccess.getHeap(this.actionMap); // success exit criteria
     } catch (e) {
+      // We only want to surface MISCONFIGURATION issues. Otherwise we continue with onFailure flow.
+      if ((e as FailureByDesign).kind === "MISCONFIGURATION") throw e;
+      await linkedListItem.action.setOutput({ error: e });
       this.logger.error(e);
       // Oh no! Something went wrong while traversing the action items.
       // If there is an onFailure action, we set the pointer and recurse,
@@ -139,7 +143,7 @@ export class Application<G extends ApplicationGlobals> {
       }
       await this.dataAccess.setLinkedListPointer(linkedListItem.onFailure.id);
 
-      return this.run();
+      return this.run(props);
     }
   }
 }

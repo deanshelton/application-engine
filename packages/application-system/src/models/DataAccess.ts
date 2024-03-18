@@ -212,7 +212,6 @@ export class DataAccess {
     });
     await Promise.all(promises);
     const pointer = await this.getLinkedListPointer();
-    console.log("GETTING POINTER FOR HEAP", pointer);
     const res = { heap, pointer };
     return res;
   }
@@ -318,7 +317,6 @@ export class DataAccess {
    * value = set before and has not yet completed
    */
   public getLinkedListPointer() {
-    console.log("GETTING POINTER-->", this.listIdMemoryKey());
     return this.getString(this.listIdMemoryKey());
   }
 

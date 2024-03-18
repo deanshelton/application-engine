@@ -1,7 +1,20 @@
-import { getLogger, Logger } from '@repo/logger';
-import type { ActionMap } from '../ActionMap';
-import type { ApplicationConfiguration, ApplicationGlobals } from '../Application';
-import { DataAccess } from '../DataAccess';
+import { getLogger, Logger } from "@repo/logger";
+import type { ActionMap } from "../ActionMap";
+import type {
+  ApplicationConfiguration,
+  ApplicationGlobals,
+} from "../Application";
+import { DataAccess } from "../DataAccess";
+import { FailureByDesign } from "@repo/failure-by-design";
+
+export interface ActionConstructorArgs<C extends ActionConfiguration> {
+  config: C;
+  dataAccess: DataAccess;
+  actionMap: ActionMap;
+  applicationConf: ApplicationConfiguration;
+  globals: ApplicationGlobals;
+  logger: Logger;
+}
 
 /**
  * This abstract class defines the basis for all actions.
@@ -12,14 +25,15 @@ import { DataAccess } from '../DataAccess';
 
 export class Action<
   C extends ActionConfiguration,
-  I extends ActionInput, 
-  O extends ActionOutput 
+  I extends ActionInput,
+  O extends ActionOutput,
 > {
-  public config: C;
+  public config: C; // static configuration for this action.
+  public props: I; // Only Action subClasses get this value passed via application.run().
   private dataAccess: DataAccess;
   public actionMap: ActionMap;
   public applicationConf: ApplicationConfiguration;
-  public globals: ApplicationGlobals;
+  public globals: ApplicationGlobals; // All classes (even DataAccess) get this.
   public logger: Logger;
   public static batchProviders: any;
 
@@ -33,15 +47,9 @@ export class Action<
     applicationConf,
     globals,
     logger = getLogger(),
-  }: {
-    config: C;
-    dataAccess: DataAccess;
-    actionMap: ActionMap;
-    applicationConf: ApplicationConfiguration;
-    globals: ApplicationGlobals;
-    logger: Logger;
-  }) {
+  }: ActionConstructorArgs<C>) {
     this.config = config;
+    this.props = {} as I;
     this.dataAccess = dataAccess;
     this.globals = globals;
     this.dataAccess = dataAccess;
@@ -54,7 +62,11 @@ export class Action<
    * Atomically increment a value in state.
    */
   public async incrementVariable(variableName: string, incrBy = 1) {
-    return this.dataAccess.incrementVariable(this.config.actionId, variableName, incrBy);
+    return this.dataAccess.incrementVariable(
+      this.config.actionId,
+      variableName,
+      incrBy
+    );
   }
 
   /**
@@ -62,7 +74,11 @@ export class Action<
    * Set the expiration of a variable to a unix timestamp in ms.
    */
   public async setExpiry(variableName: string, expireAt: number) {
-    return this.dataAccess.setExpiry(this.config.actionId, variableName, expireAt);
+    return this.dataAccess.setExpiry(
+      this.config.actionId,
+      variableName,
+      expireAt
+    );
   }
 
   /**
@@ -73,7 +89,10 @@ export class Action<
    * actions. You will need to access that memory another way.
    */
   public async getStringVariable(variableName: string): Promise<string | null> {
-    return this.dataAccess.getStringVariable(this.config.actionId, variableName);
+    return this.dataAccess.getStringVariable(
+      this.config.actionId,
+      variableName
+    );
   }
   /**
    * Safely retrieve a variable from this Action's memory for this
@@ -82,8 +101,13 @@ export class Action<
    * If you require reading from state of a different Application's
    * actions. You will need to access that memory another way.
    */
-  public async getNumericVariable(variableName: string): Promise<number | null> {
-    return this.dataAccess.getNumericVariable(this.config.actionId, variableName);
+  public async getNumericVariable(
+    variableName: string
+  ): Promise<number | null> {
+    return this.dataAccess.getNumericVariable(
+      this.config.actionId,
+      variableName
+    );
   }
   /**
    * Check if a variable exists for this accountId and campaignId.
@@ -97,12 +121,16 @@ export class Action<
    * collide with other Action's memory. You can NOT use this method
    * to update variables of a different Action.
    */
-  public async setStringVariable(variableName: string, value: string, expire?: number) {
+  public async setStringVariable(
+    variableName: string,
+    value: string,
+    expire?: number
+  ) {
     return this.dataAccess.setStringVariable(
       this.config.actionId,
       variableName,
       value,
-      expire,
+      expire
     );
   }
 
@@ -111,7 +139,11 @@ export class Action<
    * collide with other Action's memory. You can NOT use this method
    * to update variables of a different Action.
    */
-  public async setNumericVariable(variableName: string, value: number, expire?: number) {
+  public async setNumericVariable(
+    variableName: string,
+    value: number,
+    expire?: number
+  ) {
     return this.dataAccess.setNumericVariable(
       this.config.actionId,
       variableName,
@@ -125,7 +157,11 @@ export class Action<
    * collide with other Action's memory. You can NOT use this method
    * to update variables of a different Action.
    */
-  public async setNumericVariableIfNotExist(variableName: string, value: number, expire?: number) {
+  public async setNumericVariableIfNotExist(
+    variableName: string,
+    value: number,
+    expire?: number
+  ) {
     return this.dataAccess.setNumericVariable(
       this.config.actionId,
       variableName,
@@ -134,7 +170,6 @@ export class Action<
       true
     );
   }
-
 
   /**
    * Calling this function will "branch" the application logic mid-action
@@ -161,70 +196,80 @@ export class Action<
 
   /**
    * At the end of an actions lifecycle it's output will be stored
-   * at a memory address that is accessible to future invocations of 
+   * at a memory address that is accessible to future invocations of
    * the application. It may only read/write to it's own action namespace.
    * To read from another action's namespace one must hydrate that action
    * object using the ActionMap, and call .getOutput on the action
    * retrieved from the ActionMap.
    */
   public async setOutput(output: O) {
-    return this.setStringVariable('output', JSON.stringify(output))
+    return this.setStringVariable("output", JSON.stringify(output));
   }
- 
+
   /**
-   * An action may only get the output for itself, 
-   * a higher order lookup must be done to get output from another 
-   * action. If you need the output from another action during 
-   * your application runtime, it must be retrieved by going 
+   * An action may only get the output for itself,
+   * a higher order lookup must be done to get output from another
+   * action. If you need the output from another action during
+   * your application runtime, it must be retrieved by going
    * thru the hydrated actions found in the ActionMap.
    */
   public async getOutput() {
-    let rawOutput = await this.getStringVariable('output');
-    if(rawOutput) return JSON.parse(rawOutput) as O;
-    return null
+    let rawOutput = await this.getStringVariable("output");
+    if (rawOutput) return JSON.parse(rawOutput) as O;
+    return null;
   }
-
 
   /**
    * This method is called internally by the `Application` class to
    * resolve the inputs specified in the `inputSources` object
    * of this action's configuration. An `action`'s `invoke` method
    * should never need to call this method directly.
-   * 
+   *
    * There are a few string PREFIX formats used for specifying from where these
    * input values are retrieved.
-   * 
-   * Examples: 
-   * 
-   * - `GLOBAL:<someGlobalVar>` 
-   *    This specifies that the application should pull `someGlobalVar` from 
+   *
+   * Examples:
+   *
+   * - `GLOBAL:<someGlobalVar>`
+   *    This specifies that the application should pull `someGlobalVar` from
    *    the global namespace of this application. These values
-   *    usually only contain very limited sets of values that every action may need, 
+   *    usually only contain very limited sets of values that every action may need,
    *    like, the User object, or the Application object.
-   * - `GET:<actionId>:<someGlobalVar>` 
-   *    This specifies that the application should pull `someGlobalVar` from 
-   *    the namespace namespace of a previous action. This of-course requires that 
-   *    the referenced actionID was executed previously to the current Action, 
+   * - `GET:<actionId>:<someGlobalVar>`
+   *    This specifies that the application should pull `someGlobalVar` from
+   *    the namespace namespace of a previous action. This of-course requires that
+   *    the referenced actionID was executed previously to the current Action,
    *    otherwise this value would be null;
-   * - `<someGlobalVar>` 
+   * - `<someGlobalVar>`
    *    In the event that the value is not expected to be dynamic, and can be hard-coded
    *    this value will be pulled directly from the config and assumed to be static.
    */
-  public async getInput() {
-    const returnMe = {} as Record<string, any>;
+  public async getInput(error?: Error) {
+    const returnMe = {
+      ...(error && { error }),
+    } as Record<string, any>;
     if (this.config.inputSources) {
       const attributes = Object.keys(this.config.inputSources);
       for (let i = 0; i < attributes.length; i++) {
         const attribute = attributes[i];
         const inputValue = this.config.inputSources[attribute] as string; // example: GET:actionId:outputVarName
-        if (inputValue.startsWith('GLOBAL')) {
-          const [, variableName] = inputValue.split(':');
-          returnMe[attribute] = this.globals[variableName as keyof typeof this.globals] as any;
-        } else if (inputValue.startsWith('GET')) {
-          const [, actionId, variableName] = inputValue.split(':');
-          const output = await this.actionMap.getActionByLinkedListId(actionId).action.getOutput();
-          if (output === null){
-            throw new Error(
+        if (inputValue.startsWith("GLOBAL")) {
+          const [, variableName] = inputValue.split(":");
+          returnMe[attribute] = this.globals[
+            variableName as keyof typeof this.globals
+          ] as any;
+        } else if (inputValue.startsWith("PROPS")) {
+          const [, variableName] = inputValue.split(":");
+          returnMe[attribute] = this.props[
+            variableName as keyof typeof this.props
+          ] as any;
+        } else if (inputValue.startsWith("GET")) {
+          const [, actionId, variableName] = inputValue.split(":");
+          const output = await this.actionMap
+            .getActionByLinkedListId(actionId)
+            ?.action.getOutput();
+          if (output === null) {
+            throw new FailureByDesign('MISCONFIGURATION',
               `Previous action var lookup failure. ${actionId}:${variableName}`
             );
           }
@@ -234,7 +279,6 @@ export class Action<
         }
       }
     }
-    console.log('GETTING INPUT', returnMe)
     return returnMe;
   }
 
@@ -247,7 +291,7 @@ export class Action<
    */
   // eslint-disable-next-line no-unused-vars
   public async invoke(_input: I): Promise<ActionOutput> {
-    throw new Error('NOT_IMPLEMENTED. Subclass must override.');
+    throw new Error("NOT_IMPLEMENTED. Subclass must override.");
   }
 }
 
