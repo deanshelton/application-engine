@@ -10,7 +10,7 @@ import { FailureByDesign } from "@repo/failure-by-design";
 import { fail } from "assert";
 import cuid from "cuid";
 
-const logger = getLogger({ level: "debug" });
+const logger = getLogger({ level: "silent" });
 describe("ApplicationSystem", () => {
   beforeAll(async () => {
     let items = await ApplicationState.scan().exec();
@@ -91,7 +91,7 @@ describe("ApplicationSystem", () => {
         config: {
           actionId: "onSuccess",
           inputSources: {
-            whatever: "GET:flimFlam:someText",
+            whatever: "GET:flimFlam:someText", // <-- Should not exist
           },
         } as TestActionConfiguration,
       },

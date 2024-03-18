@@ -95,7 +95,7 @@ export class ActionMap {
   public getActionByLinkedListId(linkedListId: string): LinkedListItem {
     const linkedListItem = this.map[linkedListId];
     if(!linkedListItem) {
-      throw new FailureByDesign('MISCONFIGURATION', `Previous action var lookup failure. flimFlam:someText"`)
+      throw new FailureByDesign('MISCONFIGURATION', `Previous action var lookup failure. flimFlam:someText`)
     }
     return linkedListItem;
   }

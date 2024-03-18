@@ -22,7 +22,7 @@ export class VerifyPayload extends Action<
         this.config.schema
       );
     } catch (e) {
-      throw new FailureByDesign('MISCONFIGURATION', `[VerifyPayload] ${e}`, {
+      throw new FailureByDesign("MISCONFIGURATION", `[VerifyPayload] ${e}`, {
         error: e,
       });
     }
@@ -33,11 +33,12 @@ export class VerifyPayload extends Action<
   public async invoke(inputGivenToAction: VerifyPayloadInput) {
     try {
       const validatedInput = this.validate(inputGivenToAction);
-      if(validatedInput === false){
-        
-        throw new FailureByDesign('BAD_REQUEST', `JSON input does not match schema: ${JSON.stringify(this.validate.errors, null, 2)}`)
+      if (validatedInput === false) {
+        throw new FailureByDesign(
+          "BAD_REQUEST",
+          `JSON input does not match schema: ${JSON.stringify(this.validate.errors, null, 2)}`
+        );
       }
-      console.log({validatedInput})
       return { validatedInput };
     } catch (e) {
       const error = e as unknown as FailureByDesign;
@@ -47,7 +48,7 @@ export class VerifyPayload extends Action<
 }
 
 export interface VerifyPayloadInput extends ActionInput {
-  payload: any
+  payload: any;
 }
 export type VerifyPayloadOutput<T> = { validatedInput: T };
 export interface VerifyPayloadConfiguration extends ActionConfiguration {

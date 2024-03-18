@@ -1,3 +1,4 @@
+import { FailureByDesign } from "@repo/failure-by-design";
 import { getLogger, Logger } from "@repo/logger";
 import type { ActionMap } from "../ActionMap";
 import type {
@@ -5,7 +6,6 @@ import type {
   ApplicationGlobals,
 } from "../Application";
 import { DataAccess } from "../DataAccess";
-import { FailureByDesign } from "@repo/failure-by-design";
 
 export interface ActionConstructorArgs<C extends ActionConfiguration> {
   config: C;
@@ -244,10 +244,9 @@ export class Action<
    *    In the event that the value is not expected to be dynamic, and can be hard-coded
    *    this value will be pulled directly from the config and assumed to be static.
    */
-  public async getInput(error?: Error) {
-    const returnMe = {
-      ...(error && { error }),
-    } as Record<string, any>;
+  public async getInput(props:I) {
+    this.props = props;
+    const returnMe = {} as Record<string, any>;
     if (this.config.inputSources) {
       const attributes = Object.keys(this.config.inputSources);
       for (let i = 0; i < attributes.length; i++) {

@@ -10,7 +10,7 @@ import { FailureByDesign } from "@repo/failure-by-design";
 import { fail } from "assert";
 import cuid from "cuid";
 import { VerifyPayloadConfiguration } from "../models/actions/VerifyPayload";
-const logger = getLogger({ level: "debug" });
+const logger = getLogger({ level: "silent" });
 
 describe("ApplicationSystem", () => {
   beforeAll(async () => {
@@ -90,6 +90,9 @@ describe("ApplicationSystem", () => {
     const validApplicationConf = {
       type: ActionType.VERIFY_PAYLOAD,
       config: {
+        inputSources:{
+            payload:'PROPS:payload'
+        },
         actionId: "act1",
         schema: {
           type: "object",
@@ -115,7 +118,7 @@ describe("ApplicationSystem", () => {
         config: {
           actionId: "onFailureAction",
           inputSources:{
-            error: "PROPS:act1:error",
+            error: "GET:act1:error",
           }
         } as TestActionConfiguration,
       },
@@ -134,7 +137,7 @@ describe("ApplicationSystem", () => {
       applicationConf: validApplicationConf,
     });
     const res = await app.run({ payload: "NOT VALID JSON" });
-    console.log({ res });
-    expect(res.heap.onFailureAction).not.toEqual("");
+    expect(JSON.parse(res.heap.onFailureAction!).inputGivenToAction.error.kind).toEqual("BAD_REQUEST");
   });
+  
 });

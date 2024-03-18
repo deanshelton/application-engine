@@ -94,7 +94,7 @@ export class Application<G extends ApplicationGlobals> {
     }
     this.logger.debug(`"${linkedListId}" is the next node.`);
     const linkedListItem = this.actionMap.getActionByLinkedListId(linkedListId);
-    const input = await linkedListItem.action.getInput();
+    const input = await linkedListItem.action.getInput(props);
 
     try {
       const name = linkedListItem.action.constructor.name;
